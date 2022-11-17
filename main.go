@@ -1,31 +1,64 @@
 package main
 
 import (
-	"flag"
+	"awesomeProject/module"
+	"fmt"
+	"github.com/spf13/cobra"
 	"log"
 	"net/http"
 	"net/url"
 )
 
 func main() {
-	port := flag.String("p", "1874", "本地端口")
-	reverseUrl := flag.String("r", "http://localhost:8010", "代理地址")
-	flag.Parse()
+	var env string
+	rootCmd := &cobra.Command{
+		Use:   "proxy",
+		Short: "simple proxy serve",
+		Long:  "just simple proxy",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("Inside rootCmd PersistentPreRun with args: %v\n", args)
+		},
+	}
+	rootCmd.PersistentFlags().StringVarP(&env, "env", "e", ".env", "environment variable\n")
 
-	remote, err := url.Parse(*reverseUrl)
+	rootCmd.AddCommand(run())
+
+	err := rootCmd.Execute()
 	if err != nil {
-		panic(err)
+		fmt.Println("failure to launch...")
 	}
 
-	proxy := GoReverseProxy(&RProxy{
-		remote: remote,
-	})
+}
 
-	log.Println("代理地址： " + *reverseUrl + " 本地监听： http://127.0.0.1:" + *port)
+func run() *cobra.Command {
+	var port string
+	var reverse string
 
-	serveErr := http.ListenAndServe(":"+*port, proxy)
+	cmd := &cobra.Command{
+		Use:   "serve",
+		Short: "proxy serve",
+		Long:  "simple proxy serve to forwarding requests",
+		Run: func(cmd *cobra.Command, args []string) {
+			remote, err := url.Parse(reverse)
+			if err != nil {
+				panic(err)
+			}
 
-	if serveErr != nil {
-		panic(serveErr)
+			proxy := module.GoReverseProxy(&module.RProxy{
+				Remote: remote,
+			})
+
+			log.Println("代理地址： " + reverse + " 本地监听： http://127.0.0.1:" + port)
+
+			serveErr := http.ListenAndServe(":"+port, proxy)
+
+			if serveErr != nil {
+				panic(serveErr)
+			}
+		},
 	}
+	cmd.PersistentFlags().StringVar(&port, "port", "1874", "proxy local port")
+	cmd.PersistentFlags().StringVar(&reverse, "remote", "", "remote url")
+
+	return cmd
 }
