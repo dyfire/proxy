@@ -10,11 +10,11 @@ import (
 )
 
 type RProxy struct {
-	remote *url.URL
+	Remote *url.URL
 }
 
 func GoReverseProxy(this *RProxy) *httputil.ReverseProxy {
-	remote := this.remote
+	remote := this.Remote
 	proxy := httputil.NewSingleHostReverseProxy(remote)
 
 	proxy.Director = func(request *http.Request) {
