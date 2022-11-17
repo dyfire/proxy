@@ -1,7 +1,7 @@
 package main
 
 import (
-	"awesomeProject/module"
+	"proxy/module"
 	"fmt"
 	"github.com/spf13/cobra"
 	"log"
